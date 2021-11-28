@@ -3,10 +3,11 @@ package com.frost.runningapp.ui.fragments
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
-import android.view.View
+import android.view.*
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
+import androidx.navigation.fragment.findNavController
 import com.frost.runningapp.R
 import com.frost.runningapp.helpers.TrackingHelper
 import com.frost.runningapp.services.Polyline
@@ -15,6 +16,7 @@ import com.frost.runningapp.ui.viewmodels.MainViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.PolylineOptions
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.android.synthetic.main.fragment_tracking.*
 
@@ -26,6 +28,16 @@ class TrackingFragment: Fragment(R.layout.fragment_tracking) {
     private var isTracking = false
     private var pathPoints = mutableListOf<Polyline>()
     private var currentTimeMillis = 0L
+    private var menu: Menu? = null
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        setHasOptionsMenu(true)
+        return super.onCreateView(inflater, container, savedInstanceState)
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -54,10 +66,47 @@ class TrackingFragment: Fragment(R.layout.fragment_tracking) {
 
     private fun toggleRun(){
         if (isTracking) {
+            menu?.getItem(0)?.isVisible = true
             sendCommandToService(R.string.ACTION_PAUSE_SERVICE)
         } else {
             sendCommandToService(R.string.ACTION_START_OR_RESUME_SERVICE)
         }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        inflater.inflate(R.menu.toolbar_tracking_menu, menu)
+        this.menu = menu
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu) {
+        super.onPrepareOptionsMenu(menu)
+        if (currentTimeMillis > 0L) {
+            this.menu?.getItem(0)?.isVisible = true
+        }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.calcelTracking -> showCancelTrackingDialog()
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    private fun showCancelTrackingDialog() {
+        val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.AlertDialogTheme)
+            .setTitle("Cancel Run")
+            .setMessage("Are you sure???")
+            .setIcon(R.drawable.ic_delete)
+            .setPositiveButton("yes") { _, _ -> stopRun()}
+            .setNegativeButton("nop") { dialogInterface, _ -> dialogInterface.cancel() }
+            .create()
+        dialog.show()
+    }
+
+    private fun stopRun() {
+        sendCommandToService(R.string.ACTION_STOP_SERVICE)
+        findNavController().navigate(R.id.action_trackingFragment_to_runFragment)
     }
 
     private fun updateTracking(isTracking: Boolean) {
@@ -67,6 +116,7 @@ class TrackingFragment: Fragment(R.layout.fragment_tracking) {
             btnFinishRun.visibility = View.VISIBLE
         } else {
             btnToggleRun.text = "Stop"
+            menu?.getItem(0)?.isVisible = true
             btnFinishRun.visibility = View.GONE
         }
     }

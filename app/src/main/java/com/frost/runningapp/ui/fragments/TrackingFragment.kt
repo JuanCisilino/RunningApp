@@ -12,12 +12,11 @@ import com.frost.runningapp.R
 import com.frost.runningapp.db.Run
 import com.frost.runningapp.helpers.TrackingHelper
 import com.frost.runningapp.services.Polyline
+import com.frost.runningapp.services.Polylines
 import com.frost.runningapp.services.TrackingService
 import com.frost.runningapp.ui.viewmodels.MainViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.MapView
-import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -73,16 +72,19 @@ class TrackingFragment: Fragment(R.layout.fragment_tracking) {
 
     private fun subscribeToObservers() {
         TrackingService.isTracking.observe(viewLifecycleOwner, Observer { updateTracking(it) })
-        TrackingService.pathPoints.observe(viewLifecycleOwner, Observer {
-            pathPoints = it
-            addLatestPolylines()
-            moveCameraToUser()
-        })
-        TrackingService.timeRunInMillis.observe(viewLifecycleOwner, Observer {
-            currentTimeMillis = it
-            val formattedTime = TrackingHelper.getFormattedStopWatchTime(currentTimeMillis, true)
-            tvTimer.text = formattedTime
-        })
+        TrackingService.pathPoints.observe(viewLifecycleOwner, Observer { onPathPointsReceived(it) })
+        TrackingService.timeRunInMillis.observe(viewLifecycleOwner, Observer { onTimeRunReceived(it) })
+    }
+
+    private fun onTimeRunReceived(millis: Long) {
+        currentTimeMillis = millis
+        tvTimer.text = TrackingHelper.getFormattedStopWatchTime(millis, true)
+    }
+
+    private fun onPathPointsReceived(list: Polylines) {
+        pathPoints = list
+        addLatestPolylines()
+        moveCameraToUser()
     }
 
     private fun toggleRun(){
@@ -102,9 +104,7 @@ class TrackingFragment: Fragment(R.layout.fragment_tracking) {
 
     override fun onPrepareOptionsMenu(menu: Menu) {
         super.onPrepareOptionsMenu(menu)
-        if (currentTimeMillis > 0L) {
-            this.menu?.getItem(0)?.isVisible = true
-        }
+        if (currentTimeMillis > 0L) this.menu?.getItem(0)?.isVisible = true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -127,6 +127,7 @@ class TrackingFragment: Fragment(R.layout.fragment_tracking) {
 
     private fun stopRun() {
         tvTimer.text = "00:00:00:00"
+        pathPoints.clear()
         sendCommandToService(R.string.ACTION_STOP_SERVICE)
         findNavController().navigate(R.id.action_trackingFragment_to_runFragment)
     }
@@ -144,19 +145,17 @@ class TrackingFragment: Fragment(R.layout.fragment_tracking) {
     }
 
     private fun moveCameraToUser(){
-        if (pathPoints.isNotEmpty() && pathPoints.last().isNotEmpty()) {
-            map?.animateCamera(
-                CameraUpdateFactory.newLatLngZoom(
-                    pathPoints.last().last(),
-                    15f
-                )
-            )
-        }
+        if (pathPoints.isNotEmpty() && pathPoints.last().isNotEmpty())
+            map?.animateCamera(CameraUpdateFactory.newLatLngZoom(pathPoints.last().last(), 15f))
     }
 
     private fun zoomFullTrack(){
         val bounds = LatLngBounds.builder()
         pathPoints.forEach { polylines -> polylines.forEach { bounds.include(it) } }
+        moveCamera(bounds)
+    }
+
+    private fun moveCamera(bounds: LatLngBounds.Builder) {
         map?.moveCamera(
             CameraUpdateFactory.newLatLngBounds(
                 bounds.build(),
@@ -177,11 +176,8 @@ class TrackingFragment: Fragment(R.layout.fragment_tracking) {
             val caloriesBurned = ((distanceInMts / 1000f) * weight).toInt()
             val run = Run(bmp, dateTimestamp, avgSpeed, distanceInMts, currentTimeMillis, caloriesBurned)
             viewModel.insertRun(run)
-            Snackbar.make(
-                requireActivity().findViewById(R.id.rootView),
-                "Run saved!!",
-                Snackbar.LENGTH_LONG
-            ).show()
+            Snackbar.make(requireActivity().findViewById(R.id.rootView), "Run saved!!", Snackbar.LENGTH_LONG)
+                .show()
             stopRun()
         }
     }

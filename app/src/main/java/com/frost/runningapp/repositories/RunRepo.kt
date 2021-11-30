@@ -7,7 +7,7 @@ import javax.inject.Inject
 class RunRepo @Inject constructor(val runDAO: RunDAO) {
 
     suspend fun insertRun(run: Run) = runDAO.insertRun(run)
-    suspend fun deleteRun(run: Run) = runDAO.deleteRun(run)
+    suspend fun deleteAllRuns() = runDAO.deleteAll()
 
     fun getAllRunsSortedByDate() = runDAO.getAllRunsSortedByDate()
     fun getAllRunsSortedByAverageSpeed() = runDAO.getAllRunsSortedByAverageSpeed()

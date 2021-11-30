@@ -55,12 +55,15 @@ class StadisticsFragment: Fragment(R.layout.fragment_statistics) {
     }
 
     private fun subscribeToLiveData() {
-        viewModel.totalTimeRun.observe(viewLifecycleOwner, Observer {
-            it?.let { tvTotalTime.text = TrackingHelper.getFormattedStopWatchTime(it) } })
+        viewModel.totalTimeRun.observe(viewLifecycleOwner, Observer { it?.let { setTotalTime(it) } })
         viewModel.totalDistance.observe(viewLifecycleOwner, Observer { it?.let { setTotalDistance(it) } })
         viewModel.totalAverageSpeed.observe(viewLifecycleOwner, Observer { it?.let{ setAvgSpeed(it) } })
         viewModel.totalCaloriesBurned.observe(viewLifecycleOwner, Observer { it?.let { setCalories(it) } })
         viewModel.runsSortedByDate.observe(viewLifecycleOwner, Observer { it?.let { setBarChart(it) } })
+    }
+
+    private fun setTotalTime(millis: Long) {
+        tvTotalTime.text = TrackingHelper.getFormattedStopWatchTime(millis)
     }
 
     private fun setCalories(calories: Int) {

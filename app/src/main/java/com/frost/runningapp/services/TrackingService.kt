@@ -78,6 +78,7 @@ class TrackingService: LifecycleService() {
     }
 
     private fun killService() {
+        Timber.d("Stopped service")
         serviceKilled = true
         isFirstRun = true
         pauseService()
@@ -87,29 +88,14 @@ class TrackingService: LifecycleService() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-
         intent?.let {
             when (it.action) {
-                getString(R.string.ACTION_START_OR_RESUME_SERVICE) -> {
-                    if (isFirstRun) {
-                        startForegroundService()
-                        isFirstRun = false
-                    } else {
-                        Timber.d("Resuming Service")
-                        startTime()
-                    }
-                }
-                getString(R.string.ACTION_PAUSE_SERVICE) -> {
-                    Timber.d("Paused service")
-                    pauseService()
-                }
-                getString(R.string.ACTION_STOP_SERVICE) -> {
-                    Timber.d("Stopped service")
-                    killService()
-                }
+                getString(R.string.ACTION_START_OR_RESUME_SERVICE) ->
+                    if (isFirstRun) startForegroundService() else startTime()
+                getString(R.string.ACTION_PAUSE_SERVICE) -> pauseService()
+                getString(R.string.ACTION_STOP_SERVICE) -> killService()
             }
         }
-
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -120,25 +106,35 @@ class TrackingService: LifecycleService() {
     private var lastSecondTimestamp = 0L
 
     private fun startTime() {
+        Timber.d("Resuming Service")
         addEmptyPolyline()
-        isTracking.postValue(true)
-        startedTime = System.currentTimeMillis()
-        isTimerEnable = true
+        setValuesTrue()
         CoroutineScope(Dispatchers.Main).launch {
             while (isTracking.value!!) {
-                lapTime = System.currentTimeMillis() - startedTime
-                timeRunInMillis.postValue(runTime + lapTime)
-                if (timeRunInMillis.value!! >= lastSecondTimestamp + 1000L) {
-                    timeRunInSeconds.postValue(timeRunInSeconds.value!! + 1)
-                    lastSecondTimestamp += 1000L
-                }
+                manageTracking()
                 delay(50L)
             }
             runTime += lapTime
         }
     }
 
+    private fun setValuesTrue(){
+        isTracking.postValue(true)
+        startedTime = System.currentTimeMillis()
+        isTimerEnable = true
+    }
+
+    private fun manageTracking(){
+        lapTime = System.currentTimeMillis() - startedTime
+        timeRunInMillis.postValue(runTime + lapTime)
+        if (timeRunInMillis.value!! >= lastSecondTimestamp + 1000L) {
+            timeRunInSeconds.postValue(timeRunInSeconds.value!! + 1)
+            lastSecondTimestamp += 1000L
+        }
+    }
+
     private fun pauseService(){
+        Timber.d("Paused service")
         isTracking.postValue(false)
         isTimerEnable = false
     }
@@ -193,7 +189,7 @@ class TrackingService: LifecycleService() {
         }
     }
 
-    val locationCallback = object : LocationCallback(){
+    private val locationCallback = object : LocationCallback(){
         override fun onLocationResult(result: LocationResult?) {
             super.onLocationResult(result)
             if (isTracking.value!!) {
@@ -221,6 +217,7 @@ class TrackingService: LifecycleService() {
     } ?: pathPoints.postValue(mutableListOf(mutableListOf()))
 
     private fun startForegroundService() {
+        isFirstRun = false
         startTime()
         isTracking.postValue(true)
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

@@ -21,21 +21,24 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         navigateToTrackingFragmentIfNeeded(intent)
         setSupportActionBar(toolbar)
-        bottomNavigationView.setupWithNavController(navHostFragment.findNavController())
-        bottomNavigationView.setOnNavigationItemReselectedListener { /* Do Nothing */ }
-        navHostFragment.findNavController()
-            .addOnDestinationChangedListener { _, destination, _ ->
-                when (destination.id) {
-                    R.id.settingsFragment, R.id.runFragment, R.id.stadisticsFragment ->
-                        bottomNavigationView.visibility = View.VISIBLE
-                    else -> bottomNavigationView.visibility = View.GONE
-                }
-        }
+        setNavigation()
     }
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         navigateToTrackingFragmentIfNeeded(intent)
+    }
+
+    private fun setNavigation(){
+        bottomNavigationView.setupWithNavController(navHostFragment.findNavController())
+        bottomNavigationView.setOnNavigationItemReselectedListener { /* Do Nothing */ }
+        navHostFragment.findNavController().addOnDestinationChangedListener { _, destination, _ ->
+            when (destination.id) {
+                R.id.settingsFragment, R.id.runFragment, R.id.stadisticsFragment ->
+                    bottomNavigationView.visibility = View.VISIBLE
+                else -> bottomNavigationView.visibility = View.GONE
+            }
+        }
     }
 
     private fun navigateToTrackingFragmentIfNeeded(intent: Intent?) {

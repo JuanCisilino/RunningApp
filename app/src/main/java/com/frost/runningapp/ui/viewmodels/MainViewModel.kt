@@ -51,6 +51,8 @@ class MainViewModel @ViewModelInject constructor(
         }
     }
 
+    fun deleteRuns() = viewModelScope.launch { runRepo.deleteAllRuns() }
+
     fun sortRuns(sortType: SortType) = when(sortType) {
         SortType.DATE -> runSortedByDate.value?.let { runs.value = it }
         SortType.AVG_SPEED -> runsSortedByAverageSpeed.value?.let { runs.value = it }
@@ -61,7 +63,5 @@ class MainViewModel @ViewModelInject constructor(
         this.sortType = sortType
     }
 
-    fun insertRun(run: Run) = viewModelScope.launch {
-        runRepo.insertRun(run)
-    }
+    fun insertRun(run: Run) = viewModelScope.launch { runRepo.insertRun(run) }
 }

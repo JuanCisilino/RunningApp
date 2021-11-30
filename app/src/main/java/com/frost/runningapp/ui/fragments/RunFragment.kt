@@ -3,7 +3,7 @@ package com.frost.runningapp.ui.fragments
 import android.Manifest
 import android.os.Build
 import android.os.Bundle
-import android.view.View
+import android.view.*
 import android.widget.AdapterView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -12,9 +12,11 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.frost.runningapp.R
 import com.frost.runningapp.adapters.RunAdapter
+import com.frost.runningapp.db.Run
 import com.frost.runningapp.helpers.SortType
 import com.frost.runningapp.helpers.TrackingHelper
 import com.frost.runningapp.ui.viewmodels.MainViewModel
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.android.synthetic.main.fragment_run.*
 import pub.devrel.easypermissions.AppSettingsDialog
@@ -26,6 +28,14 @@ class RunFragment: Fragment(R.layout.fragment_run), EasyPermissions.PermissionCa
     private val viewModel: MainViewModel by viewModels()
 
     private lateinit var runAdapter: RunAdapter
+    private var menu: Menu? = null
+    private var isListEmpty = true
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?)
+            : View? {
+        setHasOptionsMenu(true)
+        return super.onCreateView(inflater, container, savedInstanceState)
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -36,14 +46,55 @@ class RunFragment: Fragment(R.layout.fragment_run), EasyPermissions.PermissionCa
         subscribeToLiveData()
     }
 
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        inflater.inflate(R.menu.toolbar_run_menu, menu)
+        this.menu = menu
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu) {
+        super.onPrepareOptionsMenu(menu)
+        this.menu?.getItem(0)?.isVisible = true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.calcelTracking -> if (isListEmpty) showEmptyTrackingDialog() else showCancelTrackingDialog()
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    private fun showEmptyTrackingDialog() {
+        val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.AlertDialogTheme)
+            .setTitle("No runs to delete")
+            .setIcon(R.drawable.ic_delete)
+            .setNegativeButton("ok") { dialogInterface, _ -> dialogInterface.cancel() }
+            .create()
+        dialog.show()
+    }
+
+    private fun showCancelTrackingDialog() {
+        val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.AlertDialogTheme)
+            .setTitle("Delete all runs")
+            .setMessage("Are you sure???")
+            .setIcon(R.drawable.ic_delete)
+            .setPositiveButton("yes") { _, _ -> viewModel.deleteRuns()}
+            .setNegativeButton("nop") { dialogInterface, _ -> dialogInterface.cancel() }
+            .create()
+        dialog.show()
+    }
+
     private fun subscribeToLiveData(){
-        viewModel.runs.observe(viewLifecycleOwner, Observer { runAdapter.submitList(it) })
+        viewModel.runs.observe(viewLifecycleOwner, Observer { setList(it) })
+    }
+
+    private fun setList(list: List<Run>) {
+        runAdapter.submitList(list)
+        isListEmpty = list.isEmpty()
     }
 
     private fun setBtn(){
-        fab.setOnClickListener {
-            findNavController().navigate(R.id.action_runFragment_to_trackingFragment)
-        }
+        fab.setOnClickListener { findNavController().navigate(R.id.action_runFragment_to_trackingFragment) }
     }
 
     private fun setSortType() {
@@ -79,9 +130,7 @@ class RunFragment: Fragment(R.layout.fragment_run), EasyPermissions.PermissionCa
     }
 
     private fun requestPermission() {
-        if (TrackingHelper.hasLocationPermission(requireContext())){
-            return
-        }
+        if (TrackingHelper.hasLocationPermission(requireContext())) return
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             EasyPermissions.requestPermissions(
                 this,
@@ -105,18 +154,12 @@ class RunFragment: Fragment(R.layout.fragment_run), EasyPermissions.PermissionCa
     override fun onPermissionsGranted(requestCode: Int, perms: MutableList<String>) { }
 
     override fun onPermissionsDenied(requestCode: Int, perms: MutableList<String>) {
-        if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)){
-            AppSettingsDialog.Builder(this).build().show()
-        } else {
-            requestPermission()
-        }
+        if (EasyPermissions.somePermissionPermanentlyDenied(this, perms))
+            AppSettingsDialog.Builder(this).build().show() else requestPermission()
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>,
+                                            grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
     }

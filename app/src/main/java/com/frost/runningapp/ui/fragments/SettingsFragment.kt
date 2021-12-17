@@ -26,14 +26,14 @@ class SettingsFragment: Fragment(R.layout.fragment_settings) {
     private fun setBtn(){
         btnApplyChanges.setOnClickListener {
             val success = applyChangesToSharedPref()
-            if (success) Snackbar.make(it, "Saved changes", Snackbar.LENGTH_SHORT).show()
-            else Snackbar.make(it, "Please fill out all the fields", Snackbar.LENGTH_SHORT).show()
+            if (success) Snackbar.make(it, getString(R.string.saved_changes), Snackbar.LENGTH_SHORT).show()
+            else Snackbar.make(it, getString(R.string.fill_out_all_fields), Snackbar.LENGTH_SHORT).show()
         }
     }
 
     private fun loadFieldsFromSharedPref(){
         val name = sharedPreferences.getString(getString(R.string.KEY_FIRST_TIME_NAME), "")?: ""
-        val weight = sharedPreferences.getFloat("KEY_FIRST_TIME_WEIGHT", 80f)
+        val weight = sharedPreferences.getFloat(getString(R.string.KEY_FIRST_TIME_WEIGHT), 80f)
         etName.setText(name)
         etWeight.setText(weight.toString())
     }

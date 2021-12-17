@@ -66,7 +66,7 @@ class RunFragment: Fragment(R.layout.fragment_run), EasyPermissions.PermissionCa
 
     private fun showEmptyTrackingDialog() {
         val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.AlertDialogTheme)
-            .setTitle("No runs to delete")
+            .setTitle(getString(R.string.no_runs))
             .setIcon(R.drawable.ic_delete)
             .setNegativeButton("ok") { dialogInterface, _ -> dialogInterface.cancel() }
             .create()
@@ -75,11 +75,11 @@ class RunFragment: Fragment(R.layout.fragment_run), EasyPermissions.PermissionCa
 
     private fun showCancelTrackingDialog() {
         val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.AlertDialogTheme)
-            .setTitle("Delete all runs")
-            .setMessage("Are you sure???")
+            .setTitle(getString(R.string.delete_all))
+            .setMessage(getString(R.string.are_u_sure))
             .setIcon(R.drawable.ic_delete)
-            .setPositiveButton("yes") { _, _ -> viewModel.deleteRuns()}
-            .setNegativeButton("nop") { dialogInterface, _ -> dialogInterface.cancel() }
+            .setPositiveButton(getString(R.string.yes)) { _, _ -> viewModel.deleteRuns()}
+            .setNegativeButton(getString(R.string.no)) { dialogInterface, _ -> dialogInterface.cancel() }
             .create()
         dialog.show()
     }
@@ -134,7 +134,7 @@ class RunFragment: Fragment(R.layout.fragment_run), EasyPermissions.PermissionCa
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             EasyPermissions.requestPermissions(
                 this,
-                "You need to accept location permissions to use this app",
+                getString(R.string.allow),
                 0,
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION
@@ -142,7 +142,7 @@ class RunFragment: Fragment(R.layout.fragment_run), EasyPermissions.PermissionCa
         } else {
             EasyPermissions.requestPermissions(
                 this,
-                "You need to accept location permissions to use this app",
+                getString(R.string.allow),
                 0,
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION,

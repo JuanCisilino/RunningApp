@@ -11,6 +11,22 @@
     <string name="KEY_FIRST_TIME_TOGGLE">KEY_FIRST_TIME_TOGGLE</string>
     <string name="KEY_FIRST_TIME_NAME">KEY_FIRST_TIME_NAME</string>
     <string name="KEY_FIRST_TIME_WEIGHT">KEY_FIRST_TIME_WEIGHT</string>
+    <string name="no_address">No Address</string>
+    <string name="cancel_run">Cancel Run</string>
+    <string name="are_u_sure">Are you sure???</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
+    <string name="saved">Run saved!!</string>
+    <string name="cero">00:00:00:00</string>
+    <string name="speed_over_time">Avg Speed Over Time</string>
+    <string name="enter_all_fields">Please enter all fields</string>
+    <string name="fill_out_all_fields">Please fill out all the fields</string>
+    <string name="saved_changes">Saved changes</string>
+    <string name="delete_all">Delete all runs</string>
+    <string name="no_runs">No runs to delete</string>
+    <string name="allow">You need to accept location permissions to use this app</string>
     <string-array name="filter_options">
         <item>Date</item>
         <item>Running Time</item>

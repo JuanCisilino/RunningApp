@@ -2,6 +2,8 @@ package com.frost.runningapp.ui.fragments
 
 import android.content.Intent
 import android.graphics.Color
+import android.location.Address
+import android.location.Geocoder
 import android.os.Bundle
 import android.view.*
 import androidx.fragment.app.Fragment
@@ -17,12 +19,16 @@ import com.frost.runningapp.services.TrackingService
 import com.frost.runningapp.ui.viewmodels.MainViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.fragment_tracking.*
+import timber.log.Timber
+import java.lang.RuntimeException
 import java.util.*
 import javax.inject.Inject
 import kotlin.math.round
@@ -87,6 +93,35 @@ class TrackingFragment: Fragment(R.layout.fragment_tracking) {
         moveCameraToUser()
     }
 
+    private fun setAddress(lastLatLong: LatLng) {
+        val geocoder = Geocoder(context)
+        val addresses = geocoder.getFromLocation(
+            lastLatLong.latitude,
+            lastLatLong.longitude,
+            1)
+        Snackbar.make(requireView(), getShortAddress(addresses)?: getString(R.string.no_address), Snackbar.LENGTH_SHORT).show()
+    }
+
+    private fun getShortAddress(addresses: List<Address>): String?{
+        val address = if (addresses.isNotEmpty()) addresses[0] else null
+        address ?: return null
+        address.thoroughfare ?: return getAddressWhenInMiddleOfNowhere(address)
+        address.subThoroughfare ?: return getAddressWhenInRoute(address)
+        return getAddressWhenInUrbanRegion(address)
+    }
+
+    private fun getAddressWhenInUrbanRegion(address: Address): String {
+        val needToUseAdmin = address.locality?.let { Regex("[A-Z]{3}").matches(it) }?: true
+        val locality = if (needToUseAdmin) address.adminArea else address.locality
+        return "${address.thoroughfare} ${address.subThoroughfare} ${locality?.let { ", $it" }?: ""}"
+    }
+
+    private fun getAddressWhenInRoute(address: Address) =
+        "${address.thoroughfare}, ${address.adminArea ?: ""}"
+
+    private fun getAddressWhenInMiddleOfNowhere(address: Address) =
+        "${address.subAdminArea?.let { "$it, " } ?: let { "" }}${address.adminArea ?: ""}"
+
     private fun toggleRun(){
         if (isTracking) {
             menu?.getItem(0)?.isVisible = true
@@ -116,17 +151,17 @@ class TrackingFragment: Fragment(R.layout.fragment_tracking) {
 
     private fun showCancelTrackingDialog() {
         val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.AlertDialogTheme)
-            .setTitle("Cancel Run")
-            .setMessage("Are you sure???")
+            .setTitle(getString(R.string.cancel_run))
+            .setMessage(getString(R.string.are_u_sure))
             .setIcon(R.drawable.ic_delete)
-            .setPositiveButton("yes") { _, _ -> stopRun()}
-            .setNegativeButton("nop") { dialogInterface, _ -> dialogInterface.cancel() }
+            .setPositiveButton(getString(R.string.yes)) { _, _ -> stopRun()}
+            .setNegativeButton(getString(R.string.no)) { dialogInterface, _ -> dialogInterface.cancel() }
             .create()
         dialog.show()
     }
 
     private fun stopRun() {
-        tvTimer.text = "00:00:00:00"
+        tvTimer.text = getString(R.string.cero)
         pathPoints.clear()
         sendCommandToService(R.string.ACTION_STOP_SERVICE)
         findNavController().navigate(R.id.action_trackingFragment_to_runFragment)
@@ -135,10 +170,10 @@ class TrackingFragment: Fragment(R.layout.fragment_tracking) {
     private fun updateTracking(isTracking: Boolean) {
         this.isTracking = isTracking
         if (!isTracking && currentTimeMillis > 0L) {
-            btnToggleRun.text = "Start"
+            btnToggleRun.text = getString(R.string.start)
             btnFinishRun.visibility = View.VISIBLE
         } else if (isTracking){
-            btnToggleRun.text = "Stop"
+            btnToggleRun.text = getString(R.string.stop)
             menu?.getItem(0)?.isVisible = true
             btnFinishRun.visibility = View.GONE
         }
@@ -176,7 +211,7 @@ class TrackingFragment: Fragment(R.layout.fragment_tracking) {
             val caloriesBurned = ((distanceInMts / 1000f) * weight).toInt()
             val run = Run(bmp, dateTimestamp, avgSpeed, distanceInMts, currentTimeMillis, caloriesBurned)
             viewModel.insertRun(run)
-            Snackbar.make(requireActivity().findViewById(R.id.rootView), "Run saved!!", Snackbar.LENGTH_LONG)
+            Snackbar.make(requireActivity().findViewById(R.id.rootView), getString(R.string.saved), Snackbar.LENGTH_LONG)
                 .show()
             stopRun()
         }
@@ -202,6 +237,11 @@ class TrackingFragment: Fragment(R.layout.fragment_tracking) {
                 .add(preLastLatLong)
                 .add(lastLatLong)
             map?.addPolyline(polylineOptions)
+            when {
+                this.onPause().equals(true) ->  {}
+                this.onStop().equals(true) ->  {}
+                else -> setAddress(lastLatLong)
+            }
         }
     }
 

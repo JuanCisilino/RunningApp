@@ -49,7 +49,7 @@ class StadisticsFragment: Fragment(R.layout.fragment_statistics) {
             setDrawGridLines(false)
         }
         barChart.apply {
-            description.text = "Avg Speed Over Time"
+            description.text = getString(R.string.speed_over_time)
             legend.isEnabled = false
         }
     }
@@ -86,7 +86,7 @@ class StadisticsFragment: Fragment(R.layout.fragment_statistics) {
 
     private fun setBarChart(list: List<Run>) {
         val allAvgSpeed = list.indices.map { i -> BarEntry(i.toFloat(), list[i].avgSpeedKMH) }
-        val barDataSet = BarDataSet(allAvgSpeed, "Avg Speed Over Time").apply {
+        val barDataSet = BarDataSet(allAvgSpeed, getString(R.string.speed_over_time)).apply {
             valueTextColor = Color.WHITE
             color = ContextCompat.getColor(requireContext(), R.color.colorAccent)
         }

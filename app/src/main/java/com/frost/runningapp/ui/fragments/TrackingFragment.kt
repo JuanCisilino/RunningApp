@@ -25,10 +25,7 @@ import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.fragment_tracking.*
-import timber.log.Timber
-import java.lang.RuntimeException
 import java.util.*
 import javax.inject.Inject
 import kotlin.math.round
